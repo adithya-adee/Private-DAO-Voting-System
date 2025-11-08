@@ -1,0 +1,45 @@
+classDiagram
+    direction LR
+
+    class User {
+        <<Signer>>
+        +PublicKey
+        +Signs Transactions
+    }
+
+    class SystemProgram {
+        <<Native Program>>
+        +Owns user wallet accounts
+    }
+
+    class DAO_Program {
+        <<On-Chain Program>>
+        +Owns PDAs it creates
+    }
+
+    class Proposal {
+        <<PDA Account>>
+        +creator: Pubkey
+        +description: String
+        +yes_votes: u64
+        +no_votes: u64
+        +is_finalized: bool
+    }
+    note for Proposal "Seeds: ['proposal', creator, id]"
+
+    class VoteReceipt {
+        <<PDA Account>>
+        (Data is empty)
+    }
+    note for VoteReceipt "Seeds: ['vote_receipt', voter, proposal]"
+
+    User --( SystemProgram : Is owned by
+    User --o DAO_Program : Interacts with
+
+    DAO_Program --* Proposal : Owns
+    DAO_Program --* VoteReceipt : Owns
+
+    User ..> Proposal : Creates (as Admin)
+    User ..> Proposal : Votes on (as Member)
+    User ..> VoteReceipt : Creates upon voting
+    VoteReceipt ..> Proposal : References

@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant DAO Admin
+    participant DAO Member
+    participant Frontend dApp
+    participant Solana Program
+    participant Arcium Service
+    participant Arcium MXE
+
+    DAO Admin->>+Frontend dApp: 1. Clicks "Create Proposal"
+    Frontend dApp->>+Solana Program: 2. Sends `create_proposal` transaction
+    Solana Program-->>-Frontend dApp: Proposal account created
+    
+    loop For each voter
+        DAO Member->>+Frontend dApp: 3. Views proposal and clicks "Vote Yes"
+        note right of Frontend dApp: Vote is encrypted client-side
+        Frontend dApp->>+Solana Program: 4. Sends `cast_vote` with encrypted vote
+        Solana Program->>Solana Program: Creates `VoteReceipt` PDA
+        Solana Program-->>-Frontend dApp: Vote transaction confirmed
+        
+        note over Solana Program, Arcium Service: Arcium Service listens for events
+        Arcium Service->>+Arcium MXE: 5. Forwards encrypted vote
+        Arcium MXE-->>-Arcium Service: Acknowledged
+    end
+
+    note over Arcium MXE: After voting period ends...
+    Arcium MXE->>Arcium MXE: 6. Confidentially tallies all votes
+    Arcium MXE-->>DAO Admin: 7. Provides final tally and proof
+    
+    DAO Admin->>+Frontend dApp: 8. Submits final results
+    Frontend dApp->>+Solana Program: 9. Sends `finalize_vote` with tally and proof
+    Solana Program->>Solana Program: Verifies proof, updates Proposal account
+    Solana Program-->>-Frontend dApp: Finalization confirmed
+    
+    Frontend dApp->>DAO Member: 10. Displays final results
